@@ -416,7 +416,8 @@ int main(int argc, char const *argv[]) {
         		printf("Player 1:\n");
             move = get_move();
         } else if ((player == Computer) && jogadores == 1) {
-            move = decide(b, level);
+            //move = decide(b, level);
+            move = rand()%6;
         } else if ((player == Computer) && jogadores == 2) {
             printf("Player 2:\n");
             move = get_move();
