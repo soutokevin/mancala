@@ -70,28 +70,46 @@ player_t exec_move(int board[], player_t player, int hole) {
         end = BOARD;
     }
 
-    // Spread the seeds
-    for ( i = hole+1; board[hole] > 0; i = (i+1) % BOARD) if ( i != kahala_adver ) {
-        board[i]++;
-        board[hole]--;
+    // the player cannot choose an empty hole
+    if(board[hole] == 0){
+    	printf("You cannot choose an empty hole!\n");
+    	getchar();
+    	next = player;
+    	return next;
     }
-    i--; // Make `i` point to the last hole incremented
+    // Spread the seeds
+    for ( i = hole+1; board[hole] > 0; i = (i+1) % BOARD){
+	     if ( i != kahala_adver ) {
+	        board[i]++;
+	        board[hole]--;
+	    }
+	}
+	if(i==0)
+		i=13; // if 'i' was the computer's kahala
+    else
+    	i--; // Make `i` point to the last hole incremented
 
-    // If the last filled hole was empty and it was one of the player holes,
-    // the player get a free turn.
-    if (board[i] == 1 && i >= start && i < end) {
-
-        // The player wins a free turn.
+    // The player wins a free turn. Only when the last filled hole was the player's kahala
+    if(i == kahala_player){
         next = player;
+        printf("player wins a free turn!\n");
+        getchar();
+    }
 
+    // If the last filled hole was empty and it was one of the player holes, AND the opposite isnt empty
+    // The player sends both his and the opponent's khala contents to his kahala;
+    if (board[i] == 1 && i >= start && i < end) {
         if ( i != kahala_player ) {
             int opposite = BOARD-i-2; // Should work, no matter who's the player.
 
             // Transfer the hole content
-            board[kahala_player] += board[opposite];
-            board[opposite] = 0;
-            board[kahala_player]++;
-            board[i]--;
+            getchar();
+            if(board[opposite] != 0){
+	            board[kahala_player] += board[opposite];
+	            board[opposite] = 0;
+	            board[kahala_player]++;
+	            board[i]--;
+        	}
         }
     }
 
@@ -107,7 +125,7 @@ player_t end_game(int board[]) {
         board[i] = 0;
     }
 
-    for (int i=U_Kahala+1; i < BOARD; i++) {
+    for (int i=U_Kahala+1; i < C_Kahala; i++) {
         board[C_Kahala] += board[i];
         board[i] = 0;
     }
@@ -120,10 +138,13 @@ player_t end_game(int board[]) {
         return Computer;
 }
 
-void print_board(int *board) {
+void print_board(int *board, int jogadores) {
     CLEAR;
     printf("┌────────────────────────────────────────────────────────────────┐\n");
-    printf("│ Computer                                                       │\n");
+    if (jogadores==2)
+    	printf("│ Player 2                                                       │\n");
+    else    
+    	printf("│ Computer                                                       │\n");
     printf("│                                                                │\n");
     printf("│ ┌↑───┐  ┌6───┐  ┌5───┐  ┌4───┐  ┌3───┐  ┌2───┐  ┌1───┐  ┌────┐ │\n");
 
@@ -142,10 +163,42 @@ void print_board(int *board) {
 
     printf("│ └────┘  └────┘  └────┘  └────┘  └────┘  └────┘  └────┘  └↓───┘ │\n");
     printf("│                                                                │\n");
-    printf("│                                                            You │\n");
+    if (jogadores==2)
+    	printf("│                                                       PLayer 1 │\n");
+    else
+    	printf("│                                                            You │\n");
     printf("└────────────────────────────────────────────────────────────────┘\n\n");
 }
 
+void print_menu(){
+	CLEAR;
+	printf(" _______   _____________ ________  ________                                \n");
+	printf("|  ___\\ \\ / |_   _| ___ |  ___|  \\/  |  ___|                            \n");
+	printf("| |__  \\ V /  | | | |_/ | |__ | .  . | |__                                \n");
+	printf("|  __| /   \\  | | |    /|  __|| |\\/| |  __|                              \n");
+	printf("| |___/ /^\\ \\ | | | |\\ \\| |___| |  | | |___                            \n");
+	printf("\\____/\\/   \\/ \\_/ \\_| \\_\\____/\\_|  |_\\____/                       \n");
+	printf("                       ___  ___ ___  _   _ _____  ___  _      ___          \n");
+	printf("                       |  \\/  |/ _ \\| \\ | /  __ \\/ _ \\| |    / _ \\   \n");
+	printf("                       | .  . / /_\\ |  \\| | /  \\/ /_\\ | |   / /_\\ \\  \n");
+	printf("                       | |\\/| |  _  | . ` | |   |  _  | |   |  _  |       \n");
+	printf("                       | |  | | | | | |\\  | \\__/| | | | |___| | | |      \n");
+	printf("                       \\_|  |_\\_| |_\\_| \\_/\\____\\_| |_\\_____\\_| |_/\n"); 
+	printf("                 __  ____ ____________  ______ __________  _______  ___  ___    \n");
+	printf("                / / / / //_  __/  _/  |/  / _ /_  __/ __/ |_  / _ \\/ _ \\/ _ \\\n");
+	printf("               / /_/ / /__/ / _/ // /|_/ / __ |/ / / _/  _/_ / // / // / // /   \n");
+	printf("               \\____/____/_/ /___/_/  /_/_/ |_/_/ /___/ /____\\___/\\___/\\___/\n");
+	printf("                   __  _________   __   _____  ________  ____  ___              \n");
+	printf("                  /  |/  /  _/ /  / /  / __/ |/ /  _/ / / /  |/  /              \n");
+	printf("                 / /|_/ _/ // /__/ /__/ _//    _/ // /_/ / /|_/ /               \n");
+	printf("                /_/  /_/___/____/____/___/_/|_/___/\\____/_/  /_/               \n");
+	printf("                   _______  __________________  _  __                           \n");
+	printf("                  / __/ _ \\/  _/_  __/  _/ __ \\/ |/ /                         \n");
+	printf("                 / _// // _/ /  / / _/ // /_/ /    /                            \n");
+	printf("                /___/____/___/ /_/ /___/\\____/_/|_/                            \n");
+	getchar();
+	return;
+}
 int get_move(void) {
     int hole = 0, input=0;
     char buf[200] = "";
@@ -166,6 +219,18 @@ int get_move(void) {
     return hole-1;
 }
 
+bool game_over(int board[])
+{
+	int sum1, sum2;
+	sum1=sum2=0;
+	for (int i = 0; i < U_Kahala; ++i)
+	{
+		sum1 += board[i];
+		sum2 += board[i+7];
+	}
+	return((sum1==0)||(sum2==0));
+
+}
 
 // End - Game ------------------------------------------------------------------------------------------------------ //
 
@@ -277,6 +342,8 @@ int decide(int board[], int level) {
         if (node->child[i]->fac > max) {
             max = node->child[i]->fac;
             hole=i;
+            printf("node->child[i]->fac = %d\nmax=%d\nhole=%d\n",node->child[i]->fac, max, hole);
+            getchar();
         }
     }
 
@@ -316,15 +383,22 @@ void debug_node(node_t *node, int level, bool last) {
 // End - AI -------------------------------------------------------------------------------------------------------- //
 
 int main(int argc, char const *argv[]) {
-    int level;
-    if (argc != 2) {
-        fprintf(stderr, "É necessário especificar a dificuldade.\n");
+	print_menu();
+    int level, jogadores;
+    if (argc < 3) {
+        fprintf(stderr, "É necessário especificar a dificuldade e o número de jogadores.\n");
         exit(1);
     } else {
         level=atoi(argv[1]);
+        jogadores=atoi(argv[2]);
         if (level <= 0 || level > 3 ) {
             fprintf(stderr, "Nível Dificuldade Invalido.\nO nível de dificuldade é de no mínimo 1 e no máximo 3.\n");
             exit(1);
+        }
+        if (jogadores <= 0 || jogadores > 2)
+        {
+        	fprintf(stderr, "Número de Jogadores Inválido.\nApenas 1 ou 2 jogadores.\n");
+        	exit(1);
         }
         level += 2;
     }
@@ -334,26 +408,45 @@ int main(int argc, char const *argv[]) {
 
     player_t player = Computer;
     while (is_valid(b, player, -1)) {
-        print_board(b);
+        print_board(b,jogadores);
         int move;
 
         if (player == User) {
+        	if(jogadores==2)
+        		printf("Player 1:\n");
             move = get_move();
-        } else if (player == Computer) {
+        } else if ((player == Computer) && jogadores == 1) {
             move = decide(b, level);
-        } else break;
+        } else if ((player == Computer) && jogadores == 2) {
+            printf("Player 2:\n");
+            move = get_move();
+        }else break;
 
         player = exec_move(b, player, move);
+        if(game_over(b)){
+        	printf("GAME OVER!\n");
+        	getchar();
+        	break;
+        }
     }
 
     CLEAR;
     player = end_game(b);
+    print_board(b, jogadores);
     if (player == Undefined)
         printf("Result: Tie\n");
-    else if (player == User)
-        printf("Result: You Won!!!\n");
-    else
-        printf("Result: Computer Won.\n");
+    else if (player == User){
+    	if(jogadores == 1)
+        	printf("Result: You Won!!!\n");
+        else
+        	printf("Result: Player 1 Wins!\n");
+    }
+    else{
+    	if(jogadores == 2)
+        	printf("Result: Computer Won.\n");
+        else
+        	printf("Result: Player 2 Wins!\n");
+    }
 
 
     return 0;
