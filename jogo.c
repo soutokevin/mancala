@@ -26,8 +26,10 @@ void board_new(int b[]) {
     b[C_Kahala] = 0;
 }
 
-bool is_valid(int board[], player_t player, int hole) {
-
+// Checks if a the player can excute de specified move.
+// If 'player' is 'Undefined', it'll check for any possible move.
+// If 'hole' is a negative number, it'll check if 'player' has moves.
+bool is_move_valid(int board[], player_t player, int hole) {
     if (hole < 0 || player == Undefined) {
         int start = player == Computer ? BOARD/2 : 0;
         int end = player == User ? BOARD/2 : BOARD;
@@ -40,11 +42,10 @@ bool is_valid(int board[], player_t player, int hole) {
 
         return valid;
     } else  {
-        assert(hole <= BOARD/2-1);
+        assert(hole <= BOARD/2-1); // Make sure is a valid number for 'hole'
         if (player == Computer) hole += BOARD/2; // Calculate the position on the vector.
         return board[hole] > 0;
     }
-
 }
 
 player_t exec_move(int board[], player_t player, int hole) {
@@ -113,12 +114,13 @@ player_t exec_move(int board[], player_t player, int hole) {
         }
     }
 
-    if( is_valid(board, next, -1) )
+    if(is_move_valid(board, next, -1))
         return next;
     else
         return Undefined;
 }
 
+// Finishes the game and returns the winner
 player_t end_game(int board[]) {
     for (int i=0; i < U_Kahala; i++) {
         board[U_Kahala] += board[i];
@@ -141,10 +143,12 @@ player_t end_game(int board[]) {
 void print_board(int *board, int jogadores) {
     CLEAR;
     printf("┌────────────────────────────────────────────────────────────────┐\n");
-    if (jogadores==2)
-        printf("│ Player 2                                                       │\n");
-    else
-        printf("│ Computer                                                       │\n");
+
+    printf(jogadores == 2
+        ? "│ Player 2                                                       │\n"
+        : "│ Computer                                                       │\n"
+    );
+
     printf("│                                                                │\n");
     printf("│ ┌↑───┐  ┌6───┐  ┌5───┐  ┌4───┐  ┌3───┐  ┌2───┐  ┌1───┐  ┌────┐ │\n");
 
@@ -407,7 +411,7 @@ int main(int argc, char const *argv[]) {
     board_new(b);
 
     player_t player = Computer;
-    while (is_valid(b, player, -1)) {
+    while (is_move_valid(b, player, -1)) {
         print_board(b,jogadores);
         int move;
 
