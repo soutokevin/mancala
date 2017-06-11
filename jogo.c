@@ -444,9 +444,9 @@ int main(int argc, char const *argv[]) {
             printf("Result: Player 1 Wins!\n");
     } else {
         if (jogadores == 2)
-            printf("Result: Computer Won.\n");
-        else
             printf("Result: Player 2 Wins!\n");
+        else
+            printf("Result: Computer Won.\n");
     }
 
     return 0;
