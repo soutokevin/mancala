@@ -244,7 +244,7 @@ bool game_over(int board[]) {
 // ----------------------------------------------------------------------------------------------------------------- //
 
 typedef struct Node {
-    int fac, board[BOARD];
+    int board[BOARD];
     player_t turn, next_turn;
     bool ended;
     struct Node *child[BOARD/2-1];
@@ -253,7 +253,6 @@ typedef struct Node {
 node_t* node_new(player_t p1, player_t p2) {
     node_t *new = (node_t*)malloc(sizeof(node_t));
 
-    new -> fac = 0;
     new -> ended = false;
     new -> turn = p1;
     new -> next_turn = p2;
@@ -272,88 +271,28 @@ void node_drop(node_t *node) {
     }
 }
 
-void make_tree(node_t *node, int level) {
-    // Condition to stop recursion
-    if (level <= 0) return;
-
-    for (int i=0; i < BOARD/2-1; i++) {
-        // Create the new child
-        node_t *new = node_new(node->next_turn, Undefined);
-        node->child[i] = new;
-
-        memcpy(new->board, node->board, sizeof(int) * BOARD);
-        new->next_turn = exec_move(new->board, node->turn, i);
-
-        if (new->next_turn != Undefined) make_tree(new, level-1);
-        else new->ended = true;
-    }
+// Creates a game tree from the given 'board' with 'level' heigth
+node_t* make_tree(int const board[], int level) {
+    return NULL;
 }
 
-int node_quality(node_t *node) {
-    if (node -> ended) {
-        if (node -> next_turn == Computer) return 2000;
-        else return -2000;
-    } else {
-        int user=0, computer=0;
-
-        for(int i=0; i <= U_Kahala; i++) {
-            user += node->board[i];
-        }
-
-        for(int i=U_Kahala; i <= C_Kahala; i++) {
-            computer += node->board[i];
-        }
-        return computer - user;
-    }
+// Returns a number that represents how good the game is to 'player'
+int board_quality(int const board[], player_t player) {
+    // TODO
+    return 0;
 }
 
-void node_calc(node_t *node) {
-    bool empty = true;
-
-    for (int i=0; i < BOARD/2-1; i++) {
-        if(node->child[i]) {
-            empty = false;
-            node_calc(node->child[i]);
-        }
-    }
-
-    if(empty) {
-        for (int i=0; i < BOARD/2-1; i++) {
-            node->fac = node_quality(node);
-        }
-    }
-
-    if(!empty) {
-        int max = -5000;
-
-        for (int i=0; i < BOARD/2-1; i++) {
-            if (node->child[i]->fac > max) max = node->child[i]->fac;
-        }
-        node->fac=max;
-    }
-
+// Walks the tree to get the child with the best board quality for the computer
+int min_max(node_t *root) {
+    // TODO
+    return 0;
 }
 
-int decide(int board[], int level) {
-    int hole;
-    node_t *node = node_new(Computer, User);
-    memcpy(node -> board, board, sizeof(int) * BOARD);
-    make_tree(node, level);
-    node_calc(node);
-
-    int max = -5000;
-
-    for (int i=0; i < BOARD/2-1; i++) {
-        if (node->child[i]->fac > max) {
-            max = node->child[i]->fac;
-            hole=i;
-            printf("node->child[i]->fac = %d\nmax=%d\nhole=%d\n",node->child[i]->fac, max, hole);
-            getchar();
-        }
-    }
-
-    node_drop(node);
-    return hole;
+int decide(int const board[], int level) {
+    node_t *tree = make_tree(board, level);
+    int move = min_max(tree);
+    node_drop(tree);
+    return move;
 }
 
 void debug_node(node_t *node, int level, bool last) {
@@ -369,16 +308,16 @@ void debug_node(node_t *node, int level, bool last) {
         printf("Invalid\n");
     } else {
 
-        printf("Node { Fact: %d, ", node -> fac);
+        printf("Node { ");
 
         // Print the Turn
         node -> turn == User ? printf("Turn: (User ") : printf("Turn: (Computer ");
         node -> next_turn == User ? printf("-> User)") : printf("-> Computer)");
 
         printf(", User: [");
-        for(int i=0; i < 6; i++) printf("%d, ", node -> board[i]);
+        for (int i=0; i < 6; i++) printf("%d, ", node -> board[i]);
         printf("│%d│], Computer: [", node -> board[6]);
-        for(int i=7; i < BOARD-1; i++) printf("%d, ", node -> board[i]);
+        for (int i=7; i < BOARD-1; i++) printf("%d, ", node -> board[i]);
         printf("│%d│] }\n", node-> board[BOARD]);
         // Print the childs
         for (int i=0; i < BOARD/2-1; i++) debug_node(node -> child[i], level+1, i == 5);
