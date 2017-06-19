@@ -108,7 +108,6 @@ player_t exec_move(int board[], player_t player, int hole, bool silent) {
             int opposite = BOARD-i-2; // Should work, no matter who's the player.
 
             // Transfer the hole content
-            getchar();
             if(board[opposite] != 0){
                 board[kahala_player] += board[opposite];
                 board[opposite] = 0;
@@ -272,20 +271,23 @@ void node_drop(node_t *node) {
     }
 }
 
-void make_tree(node_t *node, int level) {
+// Creates a game tree from the given 'board' with 'level' heigth
+void make_tree(node_t *root, int const level) {
     // Condition to stop recursion
     if (level <= 0) return;
 
-    for (int i=0; i < BOARD/2-1; i++) {
+    for (int i = 0; i < (BOARD-2)/2; i++) {
+        // Skip invalid moves
+        if (!is_move_valid(root -> board, root -> next_turn, i)) continue;
+
         // Create the new child
-        node_t *new = node_new(node->next_turn, Undefined);
-        node->child[i] = new;
+        node_t *new = node_new(root -> next_turn, Undefined);
+        memcpy(new -> board, root -> board, sizeof(int) * BOARD);
+        root -> child[i] = new;
 
-        memcpy(new->board, node->board, sizeof(int) * BOARD);
-        new->next_turn = exec_move(new->board, node->turn, i, true);
-
-        if (new->next_turn != Undefined) make_tree(new, level-1);
-        else new->ended = true;
+        new -> next_turn = exec_move(new -> board, root -> turn, i, true);
+        // if (new -> next_turn != Undefined)
+        make_tree(new, level-1);
     }
 }
 
@@ -301,14 +303,6 @@ int min_max(node_t *root) {
     return 0;
 }
 
-int decide(int const board[], int level) {
-    // node_t *tree = make_tree(board, level);
-    // int move = min_max(tree);
-    // node_drop(tree);
-    // return move;
-    return 0;
-}
-
 void debug_node(node_t *node, int level, bool last) {
     if(!node) return;
     for(int i=0; i < level; i++) printf("│  ");
@@ -321,7 +315,6 @@ void debug_node(node_t *node, int level, bool last) {
     } else if (node->turn == Undefined || node->next_turn == Undefined) {
         printf("Invalid\n");
     } else {
-
         printf("Node { ");
 
         // Print the Turn
@@ -332,10 +325,22 @@ void debug_node(node_t *node, int level, bool last) {
         for (int i=0; i < 6; i++) printf("%d, ", node -> board[i]);
         printf("│%d│], Computer: [", node -> board[6]);
         for (int i=7; i < BOARD-1; i++) printf("%d, ", node -> board[i]);
-        printf("│%d│] }\n", node-> board[BOARD]);
+        printf("│%d│] }\n", node-> board[BOARD-1]);
         // Print the childs
         for (int i=0; i < BOARD/2-1; i++) debug_node(node -> child[i], level+1, i == 5);
     }
+}
+
+void debug_tree(node_t *root) {
+    debug_node(root, -1, false);
+}
+
+int decide(int const board[], int level) {
+    node_t *root = node_new(User, Computer);
+    board_new(root -> board);
+    make_tree(root, 7);
+    node_drop(root);
+    return rand() % 6;
 }
 
 // End - AI -------------------------------------------------------------------------------------------------------- //
@@ -373,8 +378,7 @@ int main(int argc, char const *argv[]) {
                 printf("Player 1:\n");
             move = get_move();
         } else if ((player == Computer) && jogadores == 1) {
-            //move = decide(b, level);
-            move = rand() % 6;
+            move = decide(b, level);
         } else if ((player == Computer) && jogadores == 2) {
             printf("Player 2:\n");
             move = get_move();
