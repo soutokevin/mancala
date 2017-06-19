@@ -48,7 +48,7 @@ bool is_move_valid(int board[], player_t player, int hole) {
     }
 }
 
-player_t exec_move(int board[], player_t player, int hole) {
+player_t exec_move(int board[], player_t player, int hole, bool silent) {
     assert(hole <= BOARD/2-1 && hole >= 0 && player != Undefined);
 
     bool next;
@@ -73,8 +73,10 @@ player_t exec_move(int board[], player_t player, int hole) {
 
     // the player cannot choose an empty hole
     if(board[hole] == 0) {
-        printf("You cannot choose an empty hole!\n");
-        getchar();
+        if (!silent) {
+            printf("You cannot choose an empty hole!\n");
+            getchar();
+        }
         next = player;
         return next;
     }
@@ -93,8 +95,10 @@ player_t exec_move(int board[], player_t player, int hole) {
     // The player wins a free turn. Only when the last filled hole was the player's kahala
     if(i == kahala_player){
         next = player;
-        printf("player wins a free turn!\n");
-        getchar();
+        if (!silent) {
+            printf("player wins a free turn!\n");
+            getchar();
+        }
     }
 
     // If the last filled hole was empty and it was one of the player holes, AND the opposite isnt empty
@@ -104,7 +108,6 @@ player_t exec_move(int board[], player_t player, int hole) {
             int opposite = BOARD-i-2; // Should work, no matter who's the player.
 
             // Transfer the hole content
-            getchar();
             if(board[opposite] != 0){
                 board[kahala_player] += board[opposite];
                 board[opposite] = 0;
@@ -114,10 +117,7 @@ player_t exec_move(int board[], player_t player, int hole) {
         }
     }
 
-    if(is_move_valid(board, next, -1))
-        return next;
-    else
-        return Undefined;
+    return is_move_valid(board, next, -1) ? next : Undefined;
 }
 
 // Finishes the game and returns the winner
@@ -244,7 +244,7 @@ bool game_over(int board[]) {
 // ----------------------------------------------------------------------------------------------------------------- //
 
 typedef struct Node {
-    int fac, board[BOARD];
+    int board[BOARD];
     player_t turn, next_turn;
     bool ended;
     struct Node *child[BOARD/2-1];
@@ -253,7 +253,6 @@ typedef struct Node {
 node_t* node_new(player_t p1, player_t p2) {
     node_t *new = (node_t*)malloc(sizeof(node_t));
 
-    new -> fac = 0;
     new -> ended = false;
     new -> turn = p1;
     new -> next_turn = p2;
@@ -272,88 +271,36 @@ void node_drop(node_t *node) {
     }
 }
 
-void make_tree(node_t *node, int level) {
+// Creates a game tree from the given 'board' with 'level' heigth
+void make_tree(node_t *root, int const level) {
     // Condition to stop recursion
     if (level <= 0) return;
 
-    for (int i=0; i < BOARD/2-1; i++) {
+    for (int i = 0; i < (BOARD-2)/2; i++) {
+        // Skip invalid moves
+        if (!is_move_valid(root -> board, root -> next_turn, i)) continue;
+
         // Create the new child
-        node_t *new = node_new(node->next_turn, Undefined);
-        node->child[i] = new;
+        node_t *new = node_new(root -> next_turn, Undefined);
+        memcpy(new -> board, root -> board, sizeof(int) * BOARD);
+        root -> child[i] = new;
 
-        memcpy(new->board, node->board, sizeof(int) * BOARD);
-        new->next_turn = exec_move(new->board, node->turn, i);
-
-        if (new->next_turn != Undefined) make_tree(new, level-1);
-        else new->ended = true;
+        new -> next_turn = exec_move(new -> board, root -> turn, i, true);
+        // if (new -> next_turn != Undefined)
+        make_tree(new, level-1);
     }
 }
 
-int node_quality(node_t *node) {
-    if (node -> ended) {
-        if (node -> next_turn == Computer) return 2000;
-        else return -2000;
-    } else {
-        int user=0, computer=0;
-
-        for(int i=0; i <= U_Kahala; i++) {
-            user += node->board[i];
-        }
-
-        for(int i=U_Kahala; i <= C_Kahala; i++) {
-            computer += node->board[i];
-        }
-        return computer - user;
-    }
+// Returns a number that represents how good the game is to 'player'
+int board_quality(int const board[], player_t player) {
+    // TODO
+    return 0;
 }
 
-void node_calc(node_t *node) {
-    bool empty = true;
-
-    for (int i=0; i < BOARD/2-1; i++) {
-        if(node->child[i]) {
-            empty = false;
-            node_calc(node->child[i]);
-        }
-    }
-
-    if(empty) {
-        for (int i=0; i < BOARD/2-1; i++) {
-            node->fac = node_quality(node);
-        }
-    }
-
-    if(!empty) {
-        int max = -5000;
-
-        for (int i=0; i < BOARD/2-1; i++) {
-            if (node->child[i]->fac > max) max = node->child[i]->fac;
-        }
-        node->fac=max;
-    }
-
-}
-
-int decide(int board[], int level) {
-    int hole;
-    node_t *node = node_new(Computer, User);
-    memcpy(node -> board, board, sizeof(int) * BOARD);
-    make_tree(node, level);
-    node_calc(node);
-
-    int max = -5000;
-
-    for (int i=0; i < BOARD/2-1; i++) {
-        if (node->child[i]->fac > max) {
-            max = node->child[i]->fac;
-            hole=i;
-            printf("node->child[i]->fac = %d\nmax=%d\nhole=%d\n",node->child[i]->fac, max, hole);
-            getchar();
-        }
-    }
-
-    node_drop(node);
-    return hole;
+// Walks the tree to get the child with the best board quality for the computer
+int min_max(node_t *root) {
+    // TODO
+    return 0;
 }
 
 void debug_node(node_t *node, int level, bool last) {
@@ -368,21 +315,32 @@ void debug_node(node_t *node, int level, bool last) {
     } else if (node->turn == Undefined || node->next_turn == Undefined) {
         printf("Invalid\n");
     } else {
-
-        printf("Node { Fact: %d, ", node -> fac);
+        printf("Node { ");
 
         // Print the Turn
         node -> turn == User ? printf("Turn: (User ") : printf("Turn: (Computer ");
         node -> next_turn == User ? printf("-> User)") : printf("-> Computer)");
 
         printf(", User: [");
-        for(int i=0; i < 6; i++) printf("%d, ", node -> board[i]);
+        for (int i=0; i < 6; i++) printf("%d, ", node -> board[i]);
         printf("│%d│], Computer: [", node -> board[6]);
-        for(int i=7; i < BOARD-1; i++) printf("%d, ", node -> board[i]);
-        printf("│%d│] }\n", node-> board[BOARD]);
+        for (int i=7; i < BOARD-1; i++) printf("%d, ", node -> board[i]);
+        printf("│%d│] }\n", node-> board[BOARD-1]);
         // Print the childs
         for (int i=0; i < BOARD/2-1; i++) debug_node(node -> child[i], level+1, i == 5);
     }
+}
+
+void debug_tree(node_t *root) {
+    debug_node(root, -1, false);
+}
+
+int decide(int const board[], int level) {
+    node_t *root = node_new(User, Computer);
+    board_new(root -> board);
+    make_tree(root, 7);
+    node_drop(root);
+    return rand() % 6;
 }
 
 // End - AI -------------------------------------------------------------------------------------------------------- //
@@ -420,14 +378,13 @@ int main(int argc, char const *argv[]) {
                 printf("Player 1:\n");
             move = get_move();
         } else if ((player == Computer) && jogadores == 1) {
-            //move = decide(b, level);
-            move = rand() % 6;
+            move = decide(b, level);
         } else if ((player == Computer) && jogadores == 2) {
             printf("Player 2:\n");
             move = get_move();
         } else break;
 
-        player = exec_move(b, player, move);
+        player = exec_move(b, player, move, false);
         if(game_over(b)){
             printf("GAME OVER!\n");
             getchar();
