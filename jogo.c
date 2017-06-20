@@ -226,7 +226,7 @@ int get_move(void) {
     return hole-1;
 }
 
-bool game_over(int board[]) {
+bool game_over(int const board[]) {
     int sum1, sum2;
     sum1 = sum2 = 0;
     for (int i = 0; i < U_Kahala; ++i) {
@@ -286,8 +286,9 @@ void make_tree(node_t *root, int const level) {
         root -> child[i] = new;
 
         new -> next_turn = exec_move(new -> board, root -> turn, i, true);
-        // if (new -> next_turn != Undefined)
-        make_tree(new, level-1);
+        if (game_over(new -> board)) {
+            make_tree(new, level-1);
+        }
     }
 }
 
@@ -333,14 +334,16 @@ void debug_node(node_t *node, int level, bool last) {
 
 void debug_tree(node_t *root) {
     debug_node(root, -1, false);
+    getchar();
 }
 
 int decide(int const board[], int level) {
     node_t *root = node_new(User, Computer);
-    board_new(root -> board);
-    make_tree(root, 7);
+    memcpy(root -> board, board, sizeof(int) * BOARD);
+    make_tree(root, level);
+    int move = min_max(root);
     node_drop(root);
-    return rand() % 6;
+    return move;
 }
 
 // End - AI -------------------------------------------------------------------------------------------------------- //
