@@ -286,7 +286,7 @@ void make_tree(node_t *root, int const level) {
         root -> child[i] = new;
 
         new -> next_turn = exec_move(new -> board, root -> turn, i, true);
-        if (game_over(new -> board)) {
+        if (!game_over(new -> board)) {
             make_tree(new, level-1);
         }
     }
@@ -294,14 +294,61 @@ void make_tree(node_t *root, int const level) {
 
 // Returns a number that represents how good the game is to 'player'
 int board_quality(int const board[], player_t player) {
-    // TODO
-    return 0;
+    int user_moves = 0,
+        computer_moves = 0,
+        user_score = 0,
+        computer_score = 0,
+        score = 0;
+
+    for (int i = 0; i <= U_Kahala; ++i) {
+        user_score += board[i];
+        computer_score += board[i+7];
+
+        if (i != U_Kahala) {
+            if (board[i] != 0) user_moves++;
+            if (board[i+7] != 0 ) computer_moves++;
+        }
+    }
+
+    if (player == User) {
+        if (user_moves > computer_moves) score++;
+        if (user_score > computer_score) score += 2;
+    } else if (player == Computer) {
+        if (computer_moves > user_moves) score++;
+        if (computer_score > user_score) score += 2;
+    }
+
+    return score;
 }
 
 // Walks the tree to get the child with the best board quality for the computer
 int min_max(node_t *root) {
-    // TODO
-    return 0;
+    if (root == NULL) return 0;
+
+    int min = 100000,
+        max = -100000,
+        min_index = -1,
+        max_index = -1;
+
+    for (int i = 0; i < (BOARD-2)/2; i++) {
+        if (root -> child[i] == NULL) continue;
+
+        int quality = board_quality(root -> child[i] -> board, root -> child[i] -> turn);
+        int best = min_max(root -> child[i]);
+        quality += best;
+
+        if (quality < min) {
+            min = quality;
+            min_index = i;
+        }
+
+        if (quality > max) {
+            max = quality;
+            max_index = i;
+        }
+    }
+
+    return root -> turn == User ? min_index : max_index;
 }
 
 void debug_node(node_t *node, int level, bool last) {
